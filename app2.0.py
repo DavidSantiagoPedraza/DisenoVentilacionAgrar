@@ -76,7 +76,7 @@ EXTRACTORES = {
 
 }
 
-logo = Image.open("Ventilacion_Streamlit/logo.png")
+logo = Image.open("logo.png")
 st.set_page_config(
     page_title="AGRAR Ingeniería",
     page_icon=logo,
