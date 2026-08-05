@@ -618,13 +618,13 @@ if st.sidebar.button("Generar distribución"):
 
     #Consumo
     col2.metric(
-    "Consumo Extractores",
+    "Consumo Ventiladores",
     f"{consumo:.2f} kW"
     )
 
     #Ruido
     col3.metric(
-    "Ruido Extractores",
+    "Ruido Ventiladores",
     f"{ruido:.1f} dB"
     )
 
