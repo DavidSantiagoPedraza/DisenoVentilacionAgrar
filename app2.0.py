@@ -76,14 +76,14 @@ EXTRACTORES = {
 
 }
 
-logo = Image.open("logo.png")
-st.set_page_config(
-    page_title="AGRAR Ingeniería",
-    page_icon=logo,
-    layout="wide"
-)
+#logo = Image.open("logo.png")
+#st.set_page_config(
+#    page_title="AGRAR Ingeniería",
+#    page_icon=logo,
+#    layout="wide"
+#)
 
-st.image(logo, width=100)
+#st.image(logo, width=100)
 st.title("AGRAR Ingeniería")
 st.subheader("Optimización de Ventilación para Invernaderos")
 
@@ -116,6 +116,78 @@ def select_best_lines(lines, distancia):
 
     return best
 
+########################################
+#GENERAR COORDENADAS AUTOMATICAS
+########################################
+########################################
+# GENERAR COORDENADAS AUTOMÁTICAS
+########################################
+
+def generar_centros(
+    largo,
+    ancho_nave,
+    num_naves,
+    dx,
+    dy,
+    mx,
+    my
+):
+
+    ancho_total = ancho_nave * num_naves
+
+    espacio_util = largo - 2 * mx
+
+    if espacio_util < dx:
+
+        xs = []
+
+    else:
+
+        n_cols = int(
+            np.floor(espacio_util / dx)
+        ) + 1
+
+        espacio = (
+            espacio_util
+            - ((n_cols - 1) * dx)
+        )
+
+        offset = mx + espacio / 2
+
+        xs = (
+            offset
+            + np.arange(n_cols) * dx
+        )
+
+    lines = np.arange(
+        0,
+        ancho_total + ancho_nave,
+        ancho_nave
+    )
+
+    lines = lines[
+        (lines >= my)
+        &
+        (lines <= ancho_total - my)
+    ]
+
+    ys = select_best_lines(
+        lines,
+        dy
+    )
+
+    centros = []
+
+    for x in xs:
+
+        for y in ys:
+
+            centros.append((x, y))
+
+    return centros
+
+
+
 def plot_invernadero(
     largo,
     ancho_nave,
@@ -125,8 +197,11 @@ def plot_invernadero(
     dy,
     mx,
     my,
-    distancia_extractores
+    distancia_extractores,
+    centros,
+    mostrar_extractores = True
 ):
+
     fig, ax = plt.subplots(figsize=(12,8))
 
     ancho_total = ancho_nave * num_naves
@@ -166,30 +241,30 @@ def plot_invernadero(
         dy
     )
 
-    centros = []
 
-    for x in xs:
 
-        for y in ys:
+    # =========================================
+    # DIBUJAR VENTILADORES
+    # =========================================
 
-            c = Circle(
-                (x, y),
-                radio,
-                alpha=0.4,
-                color="skyblue"
-            )
+    for x, y in centros:
 
-            ax.add_patch(c)
+        c = Circle(
+            (x, y),
+            radio,
+            alpha=0.4,
+            color="skyblue"
+        )
 
-            ax.plot(
-                x,
-                y,
-                "ro"
-            )
+        ax.add_patch(c)
 
-            centros.append((x, y))
-
+        ax.plot(
+            x,
+            y,
+            "ro"
+        )
     #Extractores
+    mostrar_extractores=mostrar_extractores1
     extractores = []
 
     espacio_util = ancho_total - 2 * my
@@ -216,17 +291,18 @@ def plot_invernadero(
     # DIBUJAR LOS EXTRACTORES
     # =========================================
 
-    for x, y in extractores:
+    if mostrar_extractores:
+        for x, y in extractores:
 
-        ax.scatter(
-            x,
-            y,
-            s=120,
-            color="blue",
-            marker="s",
-            edgecolors="black",
-            zorder=10
-        )
+            ax.scatter(
+                x,
+                y,
+                s=120,
+                color="blue",
+                marker="s",
+                edgecolors="black",
+                zorder=10
+            )
 
     ########################################
 
@@ -432,6 +508,11 @@ st.sidebar.header("Parámetros del invernadero")
 # Selección del Extractor
 # =====================================
 
+mostrar_extractores1 = st.checkbox(
+    "Mostrar extractores en el diseño",
+    value=True
+)
+
 st.sidebar.subheader("Extractor")
 
 modelo_extractor = st.sidebar.selectbox(
@@ -567,6 +648,16 @@ distancia_extractores = st.sidebar.number_input(
 )
 
 if st.sidebar.button("Generar distribución"):
+    centros = generar_centros(
+        largo,
+        ancho_nave,
+        num_naves,
+        dx,
+        dy,
+        mx,
+        my
+    )
+
     fig, num_ventiladores, num_extractores, traslape = plot_invernadero(
         largo,
         ancho_nave,
@@ -576,7 +667,8 @@ if st.sidebar.button("Generar distribución"):
         dy,
         mx,
         my,
-        distancia_extractores
+        distancia_extractores,
+        centros
     )
 
     consumo, ruido, renovaciones = calculos_ventiladores(
